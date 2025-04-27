@@ -86,14 +86,28 @@ const Editor = () => {
     if (e.key === 'Enter') {
       e.preventDefault(); // Prevent default behavior of Enter key
       addBlockBelow(blockId); // Add a new block below the current block
+    } else if (e.key === 'Backspace') {
+      const currentBlock = blocks.find((block) => block.id === blockId);
+      if (currentBlock.content === '') {
+        e.preventDefault(); // Prevent default backspace behavior
+        const index = blocks.findIndex((block) => block.id === blockId);
+
+        if (index > 0) {
+          const previousBlock = blocks[index - 1];
+          deleteBlock(blockId); // Delete the current block
+          setTimeout(() => focusBlock(previousBlock.id), 0); // Focus the previous block
+        }
+      }
     }
   };
 
   const addBlockBelow = (blockId) => {
+    const currentBlock = blocks.find((block) => block.id === blockId);
     const newBlock = {
       id: Date.now().toString(),
-      type: 'text',
+      type: currentBlock.type === 'todo' ? 'todo' : 'text', // Match type if current block is 'todo'
       content: '',
+      ...(currentBlock.type === 'todo' && { completed: false }), // Add 'completed' property for 'todo'
     };
 
     const index = blocks.findIndex((block) => block.id === blockId);
@@ -103,6 +117,9 @@ const Editor = () => {
       ...blocks.slice(index + 1),
     ];
     setBlocks(updatedBlocks);
+
+    // Focus the newly added block
+    setTimeout(() => focusBlock(newBlock.id), 0);
   };
 
   const focusBlock = (blockId) => {

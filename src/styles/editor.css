@@ -98,8 +98,7 @@ body {
 }
 
 .todo-list {
-    list-style: none;
-    padding-left: 20px;
+    padding: 10px;
 }
 
 .todo-item {
@@ -115,12 +114,16 @@ body {
 .todo-block {
     display: flex;
     align-items: center;
-    gap: 10px;
+    margin: 5px 0;
     width: 100%;
 }
 
-.todo-block input[type='checkbox'] {
+.todo-block input {
     margin-right: 10px;
+}
+
+.todo-block span {
+    flex: 1;
 }
 
 .action-menu {
