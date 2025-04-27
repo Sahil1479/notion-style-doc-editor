@@ -145,6 +145,54 @@ const Editor = () => {
         e.preventDefault(); // Prevent default tab behavior
         addIndentation(blockId); // Add indentation to the current block
       }
+    } else if (e.key === ' ') {
+      const currentBlock = blocks.find((block) => block.id === blockId);
+      const blockContent = blockRefs.current[blockId]?.textContent || '';
+      
+      // Handle Markdown shortcuts
+      switch (blockContent.trim()) {
+        case '#':
+          e.preventDefault();
+          changeBlockType(blockId, 'heading');
+          blockRefs.current[blockId].textContent = '';
+          return;
+        
+        case '-':
+          e.preventDefault();
+          changeBlockType(blockId, 'text');
+          blockRefs.current[blockId].textContent = '•';
+          return;
+        
+        case '[]':
+          e.preventDefault();
+          changeBlockType(blockId, 'todo');
+          blockRefs.current[blockId].textContent = '';
+          return;
+
+        case '##':
+          e.preventDefault();
+          setBlocks(blocks.map(block =>
+            block.id === blockId ? {
+              ...block,
+              type: 'heading',
+              headingLevel: 2,
+              content: ''
+            } : block
+          ));
+          return;
+
+        case '###':
+          e.preventDefault();
+          setBlocks(blocks.map(block =>
+            block.id === blockId ? {
+              ...block,
+              type: 'heading',
+              headingLevel: 3,
+              content: ''
+            } : block
+          ));
+          return;
+      }
     }
   };
 
@@ -393,16 +441,16 @@ const Editor = () => {
           </div>
           {/* Render block content */}
           {block.type === 'heading' && (
-            <h2
+            <div
               ref={(el) => (blockRefs.current[block.id] = el)}
               contentEditable
               suppressContentEditableWarning
               onKeyDown={(e) => handleKeyDown(e, block.id)}
               onBlur={(e) => updateBlockContent(block.id, e.target.innerText)}
-              style={{ width: '100%' }}
+              className={`heading-${block.headingLevel || 1}`}
             >
               {block.content}
-            </h2>
+            </div>
           )}
           {block.type === 'text' && (
             <p
