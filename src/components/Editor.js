@@ -98,7 +98,32 @@ const Editor = () => {
           setTimeout(() => focusBlock(previousBlock.id), 0); // Focus the previous block
         }
       }
+    } else if (e.key === 'Tab') {
+      const currentBlock = blocks.find((block) => block.id === blockId);
+      if (currentBlock.type === 'todo') {
+        e.preventDefault(); // Prevent default tab behavior
+        addIndentation(blockId); // Add indentation to the current block
+      }
     }
+  };
+
+  const addIndentation = (blockId) => {
+    setBlocks(
+      blocks.map((block) => {
+        if (block.id === blockId) {
+          // Allow only one level of indentation
+          const maxIndentation = 1;
+          const currentIndentation = block.indentation || 0;
+          if (currentIndentation < maxIndentation) {
+            return {
+              ...block,
+              indentation: currentIndentation + 1, // Increment the indentation level
+            };
+          }
+        }
+        return block;
+      })
+    );
   };
 
   const addBlockBelow = (blockId) => {
@@ -108,6 +133,7 @@ const Editor = () => {
       type: currentBlock.type === 'todo' ? 'todo' : 'text', // Match type if current block is 'todo'
       content: '',
       ...(currentBlock.type === 'todo' && { completed: false }), // Add 'completed' property for 'todo'
+      indentation: currentBlock.indentation || 0, // Inherit the indentation level
     };
 
     const index = blocks.findIndex((block) => block.id === blockId);
@@ -337,7 +363,13 @@ const Editor = () => {
             </p>
           )}
           {block.type === 'todo' && (
-            <div className="todo-block">
+            <div
+              className="todo-block"
+              data-indentation={block.indentation || 0}
+              style={{
+                '--indentation-level': block.indentation || 0,
+              }}
+            >
               <input
                 type="checkbox"
                 checked={block.completed}

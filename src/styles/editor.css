@@ -118,6 +118,10 @@ body {
     width: 100%;
 }
 
+.todo-block[data-indentation] {
+    margin-left: calc(var(--indentation-level, 0) * 20px); /* Adjust 20px as needed */
+}
+
 .todo-block input {
     margin-right: 10px;
 }
