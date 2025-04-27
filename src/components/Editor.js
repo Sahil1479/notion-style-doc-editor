@@ -149,16 +149,27 @@ const Editor = () => {
   };
 
   const addIndentation = (blockId) => {
+    const currentBlockIndex = blocks.findIndex(block => block.id === blockId);
+    const currentBlock = blocks[currentBlockIndex];
+    const previousBlock = currentBlockIndex > 0 ? blocks[currentBlockIndex - 1] : null;
+
     setBlocks(
       blocks.map((block) => {
         if (block.id === blockId) {
-          // Allow only one level of indentation
-          const maxIndentation = 1;
           const currentIndentation = block.indentation || 0;
-          if (currentIndentation < maxIndentation) {
+          let maxAllowedIndentation = 0;
+
+          // If there's a previous block and it's a todo
+          if (previousBlock && previousBlock.type === 'todo') {
+            // Allow indenting one level more than the previous block
+            maxAllowedIndentation = (previousBlock.indentation || 0) + 1;
+          }
+
+          // Only indent if we haven't reached the maximum allowed indentation
+          if (currentIndentation < maxAllowedIndentation) {
             return {
               ...block,
-              indentation: currentIndentation + 1, // Increment the indentation level
+              indentation: currentIndentation + 1,
             };
           }
         }
@@ -171,10 +182,13 @@ const Editor = () => {
     const currentBlock = blocks.find((block) => block.id === blockId);
     const newBlock = {
       id: Date.now().toString(),
-      type: currentBlock.type === 'todo' ? 'todo' : 'text', // Match type if current block is 'todo'
+      type: currentBlock.type === 'todo' ? 'todo' : 'text',
       content: '',
-      ...(currentBlock.type === 'todo' && { completed: false }), // Add 'completed' property for 'todo'
-      indentation: currentBlock.indentation || 0, // Inherit the indentation level
+      ...(currentBlock.type === 'todo' && { 
+        completed: false,
+        // Inherit the same indentation level as the current block
+        indentation: currentBlock.indentation || 0
+      }),
     };
 
     const index = blocks.findIndex((block) => block.id === blockId);
@@ -185,7 +199,6 @@ const Editor = () => {
     ];
     setBlocks(updatedBlocks);
 
-    // Focus the newly added block
     setTimeout(() => focusBlock(newBlock.id), 0);
   };
 
