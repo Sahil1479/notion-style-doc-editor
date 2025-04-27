@@ -85,7 +85,31 @@ const Editor = () => {
   const handleKeyDown = (e, blockId) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      addBlockBelow(blockId);
+      const currentBlock = blocks.find((block) => block.id === blockId);
+      const blockContent = blockRefs.current[blockId]?.textContent || '';
+
+      if (currentBlock.type === 'todo' && blockContent.trim() === '') {
+        e.preventDefault();
+        
+        // If has indentation, reduce it first
+        if (currentBlock.indentation > 0) {
+          setBlocks(blocks.map(block => 
+            block.id === blockId 
+              ? { ...block, indentation: block.indentation - 1 }
+              : block
+          ));
+        } 
+        // If at root level (no indentation), convert to text block
+        else {
+          setBlocks(blocks.map(block =>
+            block.id === blockId
+              ? { ...block, type: 'text', content: '' }
+              : block
+          ));
+        }
+      } else {
+        addBlockBelow(blockId);
+      }
     } else if (e.key === 'Backspace') {
       const currentBlock = blocks.find((block) => block.id === blockId);
       // Get the actual content from the DOM element
