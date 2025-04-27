@@ -182,6 +182,38 @@ body {
     border: none; /* Remove any default border */
 }
 
+[contenteditable] a {
+    color: #0366d6;
+    text-decoration: underline;
+    cursor: pointer;
+    position: relative;
+}
+
+[contenteditable] a:hover::after {
+    content: "Double-click to open";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+[contenteditable] a:hover:hover::after {
+    opacity: 1;
+}
+
+[contenteditable] a:hover {
+    text-decoration: none;
+    cursor: pointer;
+}
+
 .text-toolbar button {
     background: none;
     border: none;

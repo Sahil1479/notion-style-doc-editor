@@ -19,6 +19,7 @@ const Editor = () => {
     underline: false,
     strikeThrough: false,
     code: false,
+    link: false,
   });
   const [activeBlockId, setActiveBlockId] = useState(null); // Track the block for which the dropdown is active
   const [activeBlockMenuId, setActiveBlockMenuId] = useState(null); // For the "+" dropdown
@@ -53,8 +54,13 @@ const Editor = () => {
         block.id === blockId
           ? {
               ...block,
-              type: newType,
-              content: newType === 'todo' ? 'New to-do item' : block.content,
+              type: typeof newType === 'object' ? newType.type : newType,
+              headingLevel: typeof newType === 'object' ? newType.level : undefined,
+              content: typeof newType === 'object' && newType.type === 'heading' 
+                ? block.content 
+                : newType === 'todo' 
+                  ? 'New to-do item' 
+                  : block.content,
               completed: newType === 'todo' ? false : undefined,
             }
           : block
@@ -269,12 +275,22 @@ const Editor = () => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
-      const parentNode = range.commonAncestorContainer;
-  
+      let parentNode = range.commonAncestorContainer;
+      
       // If the parentNode is a text node, get its parent element
-      return parentNode.nodeType === Node.TEXT_NODE ? parentNode.parentNode : parentNode;
+      if (parentNode.nodeType === Node.TEXT_NODE) {
+        parentNode = parentNode.parentNode;
+      }
+      
+      // Check if the text is within a link
+      const linkParent = parentNode.closest('a');
+      if (linkParent) {
+        return linkParent;
+      }
+      
+      return parentNode;
     }
-    return null; // No selection or no parent found
+    return null;
   };
 
   const handleTextSelection = () => {
@@ -367,6 +383,67 @@ const Editor = () => {
     });
   };
 
+  const addLink = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const url = prompt('Enter the URL:', 'https://');
+    if (url) {
+      const range = selection.getRangeAt(0);
+      const linkElement = document.createElement('a');
+      linkElement.href = url;
+      linkElement.target = '_blank';
+      linkElement.rel = 'noopener noreferrer';
+      
+      // If the selected text is within a code block, handle specially
+      const parentNode = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+        ? range.commonAncestorContainer.parentNode
+        : range.commonAncestorContainer;
+      
+      if (parentNode.tagName === 'CODE') {
+        const codeContent = parentNode.textContent;
+        linkElement.appendChild(document.createElement('code'));
+        linkElement.querySelector('code').textContent = selection.toString();
+        range.deleteContents();
+        range.insertNode(linkElement);
+      } else {
+        linkElement.textContent = selection.toString();
+        range.deleteContents();
+        range.insertNode(linkElement);
+      }
+      
+      // Update toolbar states
+      setToolbarStates(prev => ({
+        ...prev,
+        link: true
+      }));
+    }
+  };
+
+  const handleLinkClick = (e) => {
+    if (e.target.tagName === 'A') {
+      // Prevent default to avoid contentEditable behavior
+      e.preventDefault();
+      
+      // Single click opens the link
+      if (e.detail === 1) {
+        window.open(e.target.href, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
+  const handleLinkDoubleClick = (e) => {
+    if (e.target.tagName === 'A') {
+      e.preventDefault();
+      const currentUrl = e.target.href;
+      const newUrl = prompt('Update link URL:', currentUrl);
+      
+      if (newUrl && newUrl !== currentUrl) {
+        e.target.href = newUrl;
+      }
+    }
+  };
+
   const toggleBlockTypeMenu = (blockId) => {
     setActiveBlockMenuId((prev) => (prev === blockId ? null : blockId)); // Toggle "+" dropdown
     setActiveThreeDotMenuId(null); // Close "three dots" dropdown
@@ -430,8 +507,14 @@ const Editor = () => {
                 <button onClick={() => handleBlockTypeChange(block.id, 'text')}>
                   <i className="fas fa-t"></i> Text
                 </button>
-                <button onClick={() => handleBlockTypeChange(block.id, 'heading')}>
-                  <i className="fas fa-heading"></i> Heading
+                <button onClick={() => handleBlockTypeChange(block.id, { type: 'heading', level: 1 })}>
+                  <i className="fas fa-heading"></i> Heading 1
+                </button>
+                <button onClick={() => handleBlockTypeChange(block.id, { type: 'heading', level: 2 })}>
+                  <i className="fas fa-heading"></i> Heading 2
+                </button>
+                <button onClick={() => handleBlockTypeChange(block.id, { type: 'heading', level: 3 })}>
+                  <i className="fas fa-heading"></i> Heading 3
                 </button>
                 <button onClick={() => handleBlockTypeChange(block.id, 'todo')}>
                   <i className="fas fa-check-square"></i> To-Do
@@ -459,6 +542,8 @@ const Editor = () => {
               suppressContentEditableWarning
               onKeyDown={(e) => handleKeyDown(e, block.id)}
               onBlur={(e) => updateBlockContent(block.id, e.target.innerText)}
+              onClick={handleLinkClick}
+              onDoubleClick={handleLinkDoubleClick}
               style={{ width: '100%' }}
             >
               {block.content}
@@ -545,6 +630,13 @@ const Editor = () => {
             className={toolbarStates.code ? 'active' : ''}
           >
             &lt;/&gt;
+          </button>
+          <button
+            onClick={addLink}
+            className={toolbarStates.link ? 'active' : ''}
+            title="Add Link"
+          >
+            <i className="fas fa-link"></i>
           </button>
         </div>
       )}
