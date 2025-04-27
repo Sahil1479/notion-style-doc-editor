@@ -84,18 +84,35 @@ const Editor = () => {
 
   const handleKeyDown = (e, blockId) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // Prevent default behavior of Enter key
-      addBlockBelow(blockId); // Add a new block below the current block
+      e.preventDefault();
+      addBlockBelow(blockId);
     } else if (e.key === 'Backspace') {
       const currentBlock = blocks.find((block) => block.id === blockId);
-      if (currentBlock.content === '') {
-        e.preventDefault(); // Prevent default backspace behavior
+      // Get the actual content from the DOM element
+      const blockContent = blockRefs.current[blockId]?.textContent || '';
+      
+      if (blockContent.trim() === '') {
+        e.preventDefault();
         const index = blocks.findIndex((block) => block.id === blockId);
 
         if (index > 0) {
           const previousBlock = blocks[index - 1];
-          deleteBlock(blockId); // Delete the current block
-          setTimeout(() => focusBlock(previousBlock.id), 0); // Focus the previous block
+          deleteBlock(blockId);
+          
+          // Focus the previous block on the next tick
+          setTimeout(() => {
+            const prevBlockEl = blockRefs.current[previousBlock.id];
+            if (prevBlockEl) {
+              prevBlockEl.focus();
+              // Place cursor at the end of the previous block
+              const range = document.createRange();
+              const selection = window.getSelection();
+              range.selectNodeContents(prevBlockEl);
+              range.collapse(false);
+              selection.removeAllRanges();
+              selection.addRange(range);
+            }
+          }, 0);
         }
       }
     } else if (e.key === 'Tab') {
